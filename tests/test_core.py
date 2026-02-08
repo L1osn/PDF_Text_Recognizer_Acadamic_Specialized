@@ -50,7 +50,7 @@ class TestLayoutAnalyzer(unittest.TestCase):
         self.assertEqual(len(sup_tokens), 0)
 
     def test_unicode_preserved(self):
-        # Unicode ¹ should be preserved (not modified) - normalization is done by CitationAnalyzer
+        # Unicode ¹ should be preserved (not modified) - normalization is handled by the new engine
         chars = [
             {'text': 'A', 'top': 100, 'bottom': 110, 'x0': 10, 'x1': 20, 'size': 10, 'page': 1},
             {'text': '¹', 'top': 97, 'bottom': 102, 'x0': 20, 'x1': 25, 'size': 7, 'page': 1},

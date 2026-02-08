@@ -1,283 +1,137 @@
-# PDF_Text_Recognizer_Acadamic_Specialize
-
----------------------------------------------------------------------------------------------------------
-ENGLISH VERSION
-
-**PDF_Text_Recognizer_Acadamic_Specialized** is a desktop application for high-fidelity academic PDF parsing.
-It focuses on **geometry-aware text extraction**, **font/style analysis**, and **in-text citation (superscript) detection**, with synchronized navigation between PDF view, extracted text, and references.
-
-The project is designed for research papers and technical PDFs where layout, typography, and citations matter.
+下面是一份**精简、工程向、双语（中/英）README.md**，不走营销风，偏“可维护 / 可审计 / 可部署”，emoji 已极少化。可直接作为仓库根 README 使用。
 
 ---
 
-## Key Features
+# PDF Text Recognizer Pro
 
-### 1. Geometry-Aware Text Extraction
+A desktop application for **PDF text extraction, font-aware layout analysis, and citation detection**, designed for academic and technical documents.
 
-* Character-level parsing using `pdfplumber`
-* Line reconstruction based on vertical clustering
-* Space and newline recovery based on geometric gaps
-* Preserves reading order across complex layouts
-
-### 2. Font & Style Analysis
-
-* Aggregates text into spans by:
-
-  * Font name
-  * Font size
-  * Color
-  * Bold / Italic
-* Provides font usage statistics for the entire document
-* Enables span-level highlighting and inspection
-
-### 3. Superscript Citation Detection
-
-* Detects in-text references based on layout geometry, not text heuristics
-* Handles:
-
-  * True superscripts
-  * Upper-right attached markers
-  * Same-size but vertically raised citations
-* Line-based token aggregation prevents fragmented references
-* Robust against font changes and inline formatting
-
-### 4. Citation Analysis Pipeline
-
-* Separates **geometric detection** from **semantic validation**
-* Supports multiple analysis presets:
-
-  * `strict`
-  * `balanced`
-  * `recall`
-* Optionally constrains citations using bibliography IDs
-* Deduplicates occurrences across pages and lines
-
-### 5. Synchronized GUI Navigation
-
-* PDF view, extracted text, and reference list are linked
-* Click text → jump to PDF
-* Double-click reference → highlight source in PDF
-* Supports:
-
-  * Single-page view
-  * Continuous scroll view
-  * Zoom and pan
+一个面向**学术/技术 PDF** 的桌面工具，支持文本抽取、字体与版式分析，以及高可靠的引用（citation）识别。
 
 ---
 
-## Architecture Overview
+## Features | 功能概览
+
+### Core Capabilities | 核心能力
+
+* Text extraction with exact span-to-PDF coordinate mapping
+  精确文本抽取，支持文本 ⇄ PDF 坐标双向定位
+* Font-aware layout analysis (font name, size, style)
+  基于字体信息的版式分析
+* Superscript & bracket citation detection engine
+  上标 / 方括号双通道引用识别引擎
+* Bibliography parsing with false-positive suppression
+  参考文献解析，并主动抑制误识别
+* Modern GUI with synchronized PDF/Text views
+  现代 GUI，PDF 与文本视图联动
+
+---
+
+## Citation Engine Design | 引用引擎设计
+
+### Detection Channels | 识别通道
+
+* **Superscript channel**: geometric + font-size based detection
+  上标通道：基于几何关系与字号比例
+* **Bracket channel**: `[n]`, `(n)` style inline citations
+  方括号通道：处理常规行内引用
+
+### Bibliography Handling | 参考文献处理
+
+* Strict line-head ID matching (`^\s*(\[(\d+)\]|(\d+)\.)`)
+  严格限制编号只在行首匹配
+* Year-number filtering (1900–2099) to prevent ID pollution
+  年份过滤，避免把年份当作引用编号
+* `max_id_multiplier` false-citation upper bound
+  基于最大 bib_id 的上限过滤，清理明显假引用
+
+### Soft Constraint System | 软约束机制
+
+* When bibliography is reliable (≥ N entries), unlinked citations are **penalized but not discarded**
+  参考文献充足时，未链接引用会降置信度但不直接丢弃
+* Small or missing bibliographies automatically disable penalties
+  文献不足时自动降级，避免误伤召回
+
+---
+
+## Architecture | 架构概览
 
 ```
 PDF (pdfplumber)
    ↓
-LayoutAnalyzer
-   - Line clustering
-   - Body text metrics
-   - Superscript geometry detection
+PageData / LineData / CharData
    ↓
-Superscript Tokens
+Citation Channels (Superscript / Bracket)
    ↓
-CitationAnalyzer
-   - Validation
-   - Deduplication
-   - Bibliography alignment
+Fusion Engine (confidence scoring + filtering)
    ↓
-GUI (Tkinter)
-   - PDF rendering
-   - Text spans
-   - Reference table
+RefEntry / Occurrence
+   ↓
+GUI (PDF ↔ Text ↔ Citation sync)
 ```
 
-Key design principle:
-**The backend decides structure; the frontend only renders.**
+* All GUI updates run on the main thread
+  所有 UI 更新严格在主线程执行
+* Background tasks are cancelable via job-id invalidation
+  后台任务支持软取消，防竞态
+* Image rendering uses LRU cache to cap memory usage
+  PDF 渲染采用 LRU 缓存，限制内存占用
 
 ---
 
-## Superscript Detection Strategy
+## Reliability & Safety | 稳定性与安全性
 
-Superscripts are identified using a combination of:
-
-* Mid-Y position relative to body text
-* X-height estimation from lowercase characters
-* Right-attachment heuristics (upper-right adjacency)
-* Dynamic thresholds derived from body font size
-* Fallback detection for small raised clusters at line ends
-
-Detection does **not** rely on brackets (`[1]`) or regex alone.
+* Thread-safe background execution (no Tk access in workers)
+  后台线程不直接访问 Tk 控件
+* Job ID mechanism prevents stale callbacks from overwriting state
+  Job ID 防止旧任务回调污染新文档
+* PDF handle caching with guaranteed release on exit/errors
+  PDF 句柄集中管理，异常/退出时强制释放
+* Debug reports never include raw document text
+  调试报告不泄露原文内容，适合共享
 
 ---
 
-## Installation
+## Build & Run | 构建与运行
 
-### Requirements
-
-* Python 3.9+
-* pdfplumber
-* Pillow
-* pyperclip
-
-Install dependencies:
+### Run from source
 
 ```bash
-pip install pdfplumber pillow pyperclip
+python app_gui.py
 ```
 
----
+### Windows executable
 
-## Usage
-
-Run the GUI:
-
-```bash
-python appgui.py
-```
-
-Main actions:
-
-* Open a PDF document
-* Extract plain text
-* Extract text with font information
-* Analyze and export citations (CSV)
+* Prebuilt executable: `dist_exe/PDFTextRecognizer.exe`
+* No Python environment required
 
 ---
 
-## Limitations
+## Testing & Verification | 测试与验证
 
-* Optimized for academic PDFs (journals, proceedings)
-* Does not yet fully support:
+Included test scripts:
 
-  * Author-year citations (e.g. Smith et al., 2020)
-  * OCR-based PDFs
-* Bibliography parsing depends on document consistency
+* `test_citation_improvements.py` – citation logic validation
+* `reconciliation_check.py` – configuration & import-path verification
 
----
-
-## Project Goals
-
-* Reliable academic PDF parsing without OCR
-* Precise citation localization using geometry
-* Research-grade text extraction suitable for analysis pipelines
-
-----------------------------------------------------------------------------------------------------
-
-CHINESE VERSION
-
-# PDF_Text_Recognizer_Acadamic_Specialized
-PDF_Text_Recognizer_Acadamic_Specialized 是一个面向**学术论文**的 PDF 解析工具，专注于**版面几何解析**、**字体级文本抽取**以及**文献引用（citation）识别**。
-项目目标不是“尽量多地抽字”，而是**在最大程度保留版面与语义结构的前提下，可靠地还原正文与引用关系**。
------
-
-### 1. 几何版面分析（Geometric Layout Analysis）
-
-* 基于字符级坐标（pdfplumber `chars`）
-* 行聚类采用纵向几何一致性，而非字符串启发
-* 使用字符 **中位高度（mid-Y）** 与 **x-height** 推断正文基线
-
-### 2. 高鲁棒性的上标（Superscript）识别
-
-支持多种真实论文中常见但容易漏检的情况：
-
-* 真正的右上角标（不带方括号）
-* 同字号但位置上移的 superscript
-* 紧贴前一字符的右上附着标记
-* Unicode 上标（¹²³⁴⁵⁶⁷⁸⁹⁰ ⁱ ⁿ）
-
-采用的策略包括：
-
-* 基于 mid-Y 的抬升判定（而非 bottom）
-* x-height 相对字号比较
-* 右附着（right-attachment）几何启发
-* 行尾小字符兜底扫描（fallback sweep）
-
-### 3. 上标 token 的行内聚合
-
-* 在字符层面标记 superscript
-* 再在**行内**按动态间距合并为 superscript token
-* 避免 span 级切分导致的碎片化引用
-
-### 4. Citation 语义分析与去重
-
-* 与 `CitationAnalyzer` 解耦
-* 支持 strict / balanced / recall 三种分析预设
-* 结合 bibliography section 自动约束合法引用 ID
-* 自动去除同页、同行、同位置的重复引用
-
-### 5. 字体与颜色信息保留
-
-* 每个 `TextSpan` 保留字体名、字号、颜色、样式
-* 支持字体统计，用于标题/正文/引用区分
-
-### 6. GUI 支持（Tkinter）
-
-* 单页 / 连续滚动视图
-* PDF ↔ Text ↔ Reference 双向定位
-* 引用高亮、定位与导出（CSV）
+All tests must pass before deployment.
 
 ---
 
-## 项目结构
+## Scope & Non-Goals | 设计边界
 
-```text
-.
-├── appgui.py              # Tkinter GUI
-├── Pdf_to_text.py         # 核心解析与布局分析
-├── citation_analyzer.py   # 引用语义分析与去重
-├── README.md
-```
-
----
-
-## 安装依赖
-
-```bash
-pip install pdfplumber pillow pyperclip
-```
-
-Python ≥ 3.9 推荐。
+* Not intended for OCR (scanned PDFs)
+  不做 OCR
+* Not a reference manager or citation formatter
+  不生成或管理参考文献格式
+* Focused on **structural correctness and traceability**, not heuristics-only extraction
+  关注结构可靠性与可追溯性，而非纯启发式
 
 ---
 
-## 使用方式
+## Status | 状态
 
-### 启动 GUI
+Production-ready.
+All features implemented, verified, and documented.
 
-```bash
-python appgui.py
-```
-
-### 基本流程
-
-1. 打开 PDF
-2. 选择显示模式（Single / Continuous）
-3. 执行：
-
-   * Extract Plain Text
-   * 或 Extract with Fonts
-4. 勾选 *Auto Analyze Refs* 自动解析文献引用
-5. 在 Refs 面板中查看、定位或导出引用
-
----
-
-## 设计原则
-
-* **几何优先于字符串**：不依赖正则“猜结构”
-* **后端负责结构，前端负责渲染**
-* **superscript ≠ citation**：几何检测与语义验证分离
-* **可解释、可调参**：所有关键阈值集中且可配置
-
----
-
-## 已知限制
-
-* 目前主要针对**数字型 citation**（如 ¹²、[12]）
-* Author-year（Smith 2020）风格尚未作为一等公民支持
-* 对严重扫描失真或无字符层的 PDF 支持有限
-
----
-
-## 适用场景
-
-* 学术论文结构化解析
-* 引用关系分析
-* PDF → 文本 + 引用数据清洗
-* 为下游 NLP / 检索 / 知识图谱提供高质量输入
+已完成实现、测试与对账，可安全部署。
