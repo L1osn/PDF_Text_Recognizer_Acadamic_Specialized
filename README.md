@@ -1,6 +1,4 @@
-下面是一份**精简、工程向、双语（中/英）README.md**，不走营销风，偏“可维护 / 可审计 / 可部署”，emoji 已极少化。可直接作为仓库根 README 使用。
 
----
 
 # PDF Text Recognizer Pro
 
@@ -135,3 +133,4 @@ Production-ready.
 All features implemented, verified, and documented.
 
 已完成实现、测试与对账，可安全部署。
+
