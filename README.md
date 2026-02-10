@@ -134,3 +134,6 @@ All features implemented, verified, and documented.
 
 已完成实现、测试与对账，可安全部署。
 
+## License | 开源许可
+
+MIT LICENSE
