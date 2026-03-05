@@ -5,6 +5,7 @@
 A desktop application for **PDF text extraction, font-aware layout analysis, and citation detection**, designed for academic and technical documents.
 
 ---
+
 ## Features 
 
 ### Core Capabilities
@@ -14,26 +15,6 @@ A desktop application for **PDF text extraction, font-aware layout analysis, and
 * Superscript & bracket citation detection engine
 * Bibliography parsing with false-positive suppression
 * Modern GUI with synchronized PDF/Text views
-
----
-
-## Citation Engine Design 
-
-### Detection Channels 
-
-* **Superscript channel**: geometric + font-size based detection
-* **Bracket channel**: `[n]`, `(n)` style inline citations
-
-### Bibliography Handling 
-
-* Strict line-head ID matching (`^\s*(\[(\d+)\]|(\d+)\.)`)
-* Year-number filtering (1900–2099) to prevent ID pollution
-* `max_id_multiplier` false-citation upper bound
-
-### Soft Constraint System 
-
-* When bibliography is reliable (≥ N entries), unlinked citations are **penalized but not discarded**
-* Small or missing bibliographies automatically disable penalties
 
 ---
 
@@ -56,6 +37,26 @@ GUI (PDF ↔ Text ↔ Citation sync)
 * All GUI updates run on the main thread
 * Background tasks are cancelable via job-id invalidation
 * Image rendering uses LRU cache to cap memory usage
+
+---
+
+## Citation Engine Design 
+
+### Detection Channels 
+
+* **Superscript channel**: geometric + font-size based detection
+* **Bracket channel**: `[n]`, `(n)` style inline citations
+
+### Bibliography Handling 
+
+* Strict line-head ID matching (`^\s*(\[(\d+)\]|(\d+)\.)`)
+* Year-number filtering (1900–2099) to prevent ID pollution
+* `max_id_multiplier` false-citation upper bound
+
+### Soft Constraint System 
+
+* When bibliography is reliable (≥ N entries), unlinked citations are **penalized but not discarded**
+* Small or missing bibliographies automatically disable penalties
 
 ---
 
@@ -106,5 +107,6 @@ All tests must pass before deployment.
 ## License
 
 MIT LICENSE
+
 
 
