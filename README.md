@@ -37,7 +37,7 @@ A desktop application for **PDF text extraction, font-aware layout analysis, and
 
 ---
 
-## Architecture |
+## Architecture 
 
 ```
 PDF (pdfplumber)
@@ -106,4 +106,5 @@ All tests must pass before deployment.
 ## License
 
 MIT LICENSE
+
 
